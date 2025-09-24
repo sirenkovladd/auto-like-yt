@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+
+	<title>Auto Like YouTube</title>
+
+	<style>
+		:root {
+			/* Cores  */
+			--auto-like-youtube-white: #ffffff;
+			/* branco */
+			--auto-like-youtube-black: #000000;
+			/* preto */
+			--auto-like-youtube-color-1: #5c6bc0;
+			/* cor primária */
+			--auto-like-youtube-color-2: #3949ab;
+			/* cor primária + escura */
+			--auto-like-youtube-color-3: #252525;
+			/* cinza escuro */
+			--auto-like-youtube-color-4: #aeaeae;
+			/* cinza claro */
+			--auto-like-youtube-color-5: #e7e7e7;
+			/* cinza claro 2 */
+
+			/* Fontes  */
+			--auto-like-youtube-font-1: "Lato", sans-serif;
+		}
+
+		* {
+			font-family: var(--auto-like-youtube-font-1);
+		}
+
+		body {
+			width: 400px;
+			color: var(--auto-like-youtube-color-3);
+			background-color: #f9f9f9;
+			padding: 20px 15px 15px 15px;
+			margin: 0;
+		}
+
+		p {
+			color: var(--auto-like-youtube-color-4);
+			font-size: 12px;
+			font-weight: 300;
+			margin: 0;
+		}
+
+		p a {
+			color: var(--auto-like-youtube-color-1);
+			text-decoration: none;
+			font-size: 12px;
+			font-weight: 500;
+		}
+
+		hr {
+			width: 100%;
+			height: 1px;
+			background-color: var(--auto-like-youtube-color-5);
+			border: 0;
+			margin: 0;
+		}
+
+		#logotipo {
+			width: 30px;
+			height: 30px;
+			margin: 0 auto 15px auto;
+			display: block;
+		}
+
+		#title {
+			font-size: 20px;
+			font-weight: 800;
+			text-align: center;
+			margin-top: 0px;
+			margin-bottom: 20px;
+		}
+
+		#channelForm {
+			gap: 15px;
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			justify-content: flex-start;
+			align-items: stretch;
+			align-content: stretch;
+		}
+
+		#channelInput {
+			width: calc(100% - 85px - 15px);
+			height: 41px;
+			font-size: 14px;
+			border: 1px solid var(--auto-like-youtube-color-1);
+			border-radius: 5px;
+			padding: 8px 12px;
+			transition: border-color 0.3s ease;
+			box-sizing: border-box;
+		}
+
+		#channelInput:focus {
+			border-color: #3498db;
+			outline: none;
+			box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+		}
+
+		#addButton {
+			width: 85px;
+			height: 41px;
+			color: white;
+			font-size: 14px;
+			background-color: var(--auto-like-youtube-color-1);
+			border: 0;
+			border-radius: 5px;
+			padding: 8px 12px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+
+		#addButton:hover {
+			background-color: var(--auto-like-youtube-color-2);
+		}
+
+		#addButton:disabled {
+			background-color: var(--auto-like-youtube-color-4);
+			cursor: not-allowed;
+		}
+
+		#channelList {
+			max-height: 206px;
+			border-radius: 5px;
+			margin-top: 15px;
+			overflow-y: auto;
+			counter-reset: item;
+		}
+
+		#channelList:has(.channel-item:nth-child(5)) .channel-item {
+			margin-right: 15px !important;
+		}
+
+		.channel-item {
+			background-color: white;
+			border: 1px solid #f1f1f1;
+			border-radius: 6px;
+			padding: 8px 12px;
+			margin: 5px 0px 5px 0;
+			box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+			transition: all 0.3s ease;
+			gap: 10px;
+			display: flex;
+			justify-content: flex-start;
+			align-items: center;
+		}
+
+		.channel-item::before {
+			content: counter(item)".";
+			counter-increment: item;
+		}
+
+		.channel-item:first-child {
+			margin-top: 0;
+		}
+
+		.channel-item:last-child {
+			margin-bottom: 0;
+		}
+
+		.channel-item:hover {
+			border: 1px solid var(--auto-like-youtube-color-1);
+		}
+
+		.channel-item button {
+			color: var(--auto-like-youtube-color-1);
+			font-size: 14px;
+			background: none;
+			border: none;
+			cursor: pointer;
+			padding: 2px 6px;
+			margin-left: auto !important;
+			border-radius: 3px;
+			transition: color 0.3s ease, transform 0.2s ease;
+		}
+
+		.channel-item button:hover {
+			color: #c0392b;
+		}
+
+		#channelList::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		#channelList::-webkit-scrollbar-track {
+			background: #f1f1f1;
+			border-radius: 6px;
+		}
+
+		#channelList::-webkit-scrollbar-thumb {
+			background: var(--auto-like-youtube-color-1);
+			border-radius: 6px;
+		}
+
+		#channelList::-webkit-scrollbar-thumb:hover {
+			background: var(--auto-like-youtube-color-1);
+		}
+
+		/* BACKUP  */
+
+		#backup {
+			padding: 10px 0;
+		}
+
+		#backup p a {
+			cursor: pointer;
+		}
+
+		/* REVIEW  */
+
+		#review {
+			text-align: center;
+			padding: 13px 0 0 0;
+		}
+
+		#review a {
+			width: fit-content;
+			text-decoration: none;
+			margin: 0 auto;
+			display: block;
+		}
+
+		#review a span {
+			color: var(--auto-like-youtube-color-1);
+			font-weight: 500;
+		}
+
+		#review a .stars {
+			margin: 5px 0 0 0;
+			gap: 5px;
+
+			display: flex;
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: center;
+			align-items: center;
+			align-content: center;
+		}
+
+		#review a .stars svg {
+			width: 16px;
+			height: 16px;
+		}
+
+		#review a .stars svg path {
+			fill: #ffc107;
+		}
+
+		/* BY  */
+
+		#by {
+			width: 100%;
+			text-align: center;
+			padding: 10px 0;
+		}
+	</style>
+</head>
+
+<body>
+	<img id="logotipo" src="icons/icon128.png">
+
+	<h3 id="title">Auto Like YouTube</h3>
+
+	<div id="channelForm">
+		<input type="text" id="channelInput">
+
+		<button id="addButton"></button>
+	</div>
+
+	<div id="channelList"></div>
+
+	<div id="backup">
+		<center>
+			<p><a id="exportButton"></a> <span id="orText"></span> <a id="importButton"></a></p>
+		</center>
+	</div>
+
+	<script src="popup.js"></script>
+</body>
+
+</html>

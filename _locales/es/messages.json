@@ -1,0 +1,46 @@
+{
+   "addButton": {
+      "message": "Añadir"
+   },
+   "channelPlaceholder": {
+      "message": "Nombre del Canal"
+   },
+   "export": {
+      "message": "Exportar"
+   },
+   "extDescription": {
+      "message": "Da likes automáticos en los videos de tus canales favoritos de YouTube. Crea tu lista con una interfaz simple e intuitiva."
+   },
+   "extName": {
+      "message": "Auto Like YouTube"
+   },
+   "import": {
+      "message": "Importar"
+   },
+   "importErrorFormat": {
+      "message": "Error: ¡El archivo JSON debe contener una lista de canales!"
+   },
+   "importErrorInvalid": {
+      "message": "Error al importar: ¡Archivo JSON inválido!"
+   },
+   "importSuccess": {
+      "message": "¡Canales importados con éxito!"
+   },
+   "or": {
+      "message": "o"
+   },
+   "review": {
+      "message": "Valóranos en la Chrome Store."
+   },
+   "toastLiked": {
+      "message": "¡Yeah! Tu like fue enviado a \u003Cu>$channel$\u003C/u>",
+      "placeholders": {
+         "channel": {
+            "content": "$1"
+         }
+      }
+   },
+   "toastNotFound": {
+      "message": "¡Ups! ¡No encontramos el botón de like!"
+   }
+}
