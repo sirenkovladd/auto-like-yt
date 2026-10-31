@@ -1,19 +1,18 @@
 // background.js
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Extensão instalada ou atualizada, configurando alarms.");
-  chrome.alarms.create("keepAlive", { periodInMinutes: 0.1 }); // A cada 6 segundos
+  chrome.alarms.create("keepAlive", { periodInMinutes: 0.5 }); // A cada 30 segundos
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "keepAlive") {
     console.log("Service worker mantido vivo:", new Date());
     // Envia ping às abas do YouTube
-    chrome.tabs.query({ url: "*://*.youtube.com/*" }, (tabs) => {
+    chrome.tabs.query({ url: "*://*.youtube.com/watch*" }, (tabs) => {
       tabs.forEach((tab) => {
-        chrome.tabs.sendMessage(tab.id, { type: "ping" }, (response) => {
-          if (chrome.runtime.lastError) {
-            console.log("Aba não respondeu ou service worker suspenso:", tab.id);
-          }
+        chrome.tabs.sendMessage(tab.id, { type: "ping" }, () => {
+          // Suppress errors for tabs that don't have content script
+          void chrome.runtime.lastError;
         });
       });
     });

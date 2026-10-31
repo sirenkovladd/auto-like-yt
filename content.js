@@ -66,35 +66,81 @@ function showToast(message) {
 }
 
 function getChannelName() {
-	let channelElement = document.querySelector('#primary #top-row ytd-channel-name#channel-name a');
-	if (!channelElement) {
-		channelElement = document.querySelector('ytd-video-owner-renderer #upload-info a#text');
+	// Try multiple selectors for different YouTube layouts
+	// More specific selectors first — avoid broad ones that could match comments/recommended
+	const selectors = [
+		'#primary #top-row ytd-channel-name#channel-name a',
+		'ytd-watch-metadata ytd-channel-name a',
+		'ytd-video-owner-renderer #upload-info a#text',
+		'#owner #channel-name a',
+	];
+	for (const selector of selectors) {
+		const el = document.querySelector(selector);
+		if (el && el.textContent.trim()) return el.textContent.trim();
 	}
-	return channelElement ? channelElement.textContent.trim() : null;
+	return null;
 }
 
 function getLikeButton() {
-	const likeButton = document.querySelector('div#top-level-buttons-computed like-button-view-model toggle-button-view-model button-view-model button.yt-spec-button-shape-next') || document.querySelector('div#top-level-buttons-computed button[aria-label*="Gostei"]');
-	return likeButton;
+	// Try multiple selectors for the like button across YouTube layouts
+	const selectors = [
+		// Current YouTube (2024-2025) segmented like button
+		'like-button-view-model button.yt-spec-button-shape-next',
+		// Older structure
+		'div#top-level-buttons-computed like-button-view-model button',
+		'div#top-level-buttons-computed button[aria-label*="Like"]',
+		'div#top-level-buttons-computed button[aria-label*="Gostei"]',
+		'div#top-level-buttons-computed button[aria-label*="喜欢"]',
+		`div#top-level-buttons-computed button[aria-label*="J'aime"]`,
+		`div#top-level-buttons-computed button[aria-label*="Мне нравится"]`,
+		'div#top-level-buttons-computed button[aria-label*="Gefällt mir"]',
+		'div#top-level-buttons-computed button[aria-label*="いいね"]',
+		'div#top-level-buttons-computed button[aria-label*="좋아요"]',
+		// Segment button structure
+		'ytd-segmented-like-dislike-button-renderer #like-button button',
+		// Fallback: first button in like/dislike area
+		'#top-level-buttons-computed ytd-toggle-button-renderer:first-child button',
+	];
+	for (const selector of selectors) {
+		const el = document.querySelector(selector);
+		if (el) return el;
+	}
+	return null;
 }
 
-function likeVideo(likeButton) {
+function likeVideo(likeButton, expectedChannel) {
 	likeButton ??= getLikeButton();
 	console.log('Liking video...');
 	if (likeButton && likeButton.getAttribute('aria-pressed') !== 'true') {
-		channelName = getChannelName();
+		const currentChannel = getChannelName();
+		if (expectedChannel && currentChannel !== expectedChannel) {
+			console.log('Channel mismatch, aborting like. Expected:', expectedChannel, 'Got:', currentChannel);
+			return;
+		}
 		likeButton.click();
-		showToast(chrome.i18n.getMessage("toastLiked", channelName));
+		showToast(chrome.i18n.getMessage("toastLiked", currentChannel));
 		console.log('Video liked');
 	} else if (!likeButton) {
 		showToast(chrome.i18n.getMessage("toastNotFound"));
 	}
 }
 
-function checkAndLike() {
+let checkInProgress = false;
+
+function checkAndLike(retryCount = 0) {
 	if (!window.location.href.includes('youtube.com/watch')) return;
+	if (retryCount > 3) {
+		console.log('Max retries reached, giving up');
+		return;
+	}
+	if (checkInProgress) {
+		console.log('Check already in progress, skipping');
+		return;
+	}
 
 	console.log('Checking and liking...');
+	checkInProgress = true;
+	const startUrl = window.location.href;
 
 	const checkDOM = setInterval(() => {
 		const channelName = getChannelName();
@@ -106,24 +152,39 @@ function checkAndLike() {
 				console.log('Response checkAndLike', response)
 				if (chrome.runtime.lastError || !response) {
 					console.error('Erro na comunicação com background ou service worker suspenso:', chrome.runtime.lastError);
-					setTimeout(checkAndLike, 5000); // Tenta novamente em 5 segundos
+					checkInProgress = false;
+					setTimeout(() => checkAndLike(retryCount + 1), 5000); // Tenta novamente em 5 segundos
 					return;
 				}
 				if (response && Array.isArray(response.channels) && response.channels.includes(channelName)) {
-					console.log('Channel include in checkAndLike list')
+					console.log('Channel included in checkAndLike list:', channelName);
+					let t2;
 					const checkLikeButton = setInterval(() => {
+						// Abort if user navigated away
+						if (window.location.href !== startUrl) {
+							console.log('URL changed during like check, aborting');
+							clearInterval(checkLikeButton);
+							if (t2) clearTimeout(t2);
+							checkInProgress = false;
+							return;
+						}
 						const likeButton = getLikeButton();
 						if (likeButton) {
-							console.log('Like button found')
+							console.log('Like button found');
 							clearInterval(checkLikeButton);
-							clearTimeout(t2);
-							setTimeout(likeVideo, 1000, likeButton);
+							if (t2) clearTimeout(t2);
+							setTimeout(likeVideo, 1000, likeButton, channelName);
+							checkInProgress = false;
 						}
 					}, 500);
-					const t2 = setTimeout(() => {
-						console.log('Terminate liking')
+					t2 = setTimeout(() => {
+						console.log('Terminate liking - button not found in 20s');
 						clearInterval(checkLikeButton);
+						checkInProgress = false;
 					}, 20000);
+				} else {
+					console.log('Channel not in liked list:', channelName, 'List:', response?.channels);
+					checkInProgress = false;
 				}
 			});
 		}
@@ -131,6 +192,7 @@ function checkAndLike() {
 	const t1 = setTimeout(() => {
 		console.log('Terminate Checking')
 		clearInterval(checkDOM);
+		checkInProgress = false;
 	}, 20000);
 }
 
@@ -152,19 +214,20 @@ function startDomObserver() {
 function keepServiceWorkerAlive() {
 	setInterval(() => {
 		if (window.location.href.includes('youtube.com')) {
-			chrome.runtime.sendMessage({ type: "keepAlive" }, (response) => {
-				if (chrome.runtime.lastError || !response) {
-					console.error('Erro ao enviar keepAlive ou service worker suspenso:', chrome.runtime.lastError);
-					setTimeout(checkAndLike, 5000); // Reinicia a lógica
-				}
+			chrome.runtime.sendMessage({ type: "keepAlive" }, () => {
+				// Ignore errors - background may be sleeping
+				void chrome.runtime.lastError;
 			});
 		}
-	}, 10000);
+	}, 30000); // Reduced from 10s to 30s
 	chrome.runtime.onMessage.addListener((message) => {
 		if (message.type === "added_checkAndLike") {
 			const channel = message.channel;
-			if (channel === getChannelName()) {
-				likeVideo();
+			if (!channel) {
+				// No specific channel - trigger full check (e.g., after import)
+				checkAndLike();
+			} else if (channel === getChannelName()) {
+				likeVideo(undefined, channel);
 			}
 		}
 	});

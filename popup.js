@@ -98,6 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (Array.isArray(importedChannels)) {
                             chrome.storage.sync.set({ likedChannels: importedChannels }, () => {
                                 loadChannels();
+                                // Trigger check on current YouTube tab
+                                chrome.tabs.query({ url: '*://*.youtube.com/watch*' }, (tabs) => {
+                                    tabs.forEach((tab) => {
+                                        chrome.tabs.sendMessage(tab.id, { type: "added_checkAndLike" });
+                                    });
+                                });
                                 alert(chrome.i18n.getMessage("importSuccess"));
                             });
                         } else {
